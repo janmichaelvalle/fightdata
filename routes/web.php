@@ -7,5 +7,8 @@ Route::get('/', function () {
 });
 
 use App\Http\Controllers\PlayerController;
+use App\Http\Controllers\SimplePlayerController;
 
 Route::get('/player/{polarisId}', [PlayerController::class, 'show']);
+
+Route::get('/sets/{polarisId}', [SimplePlayerController::class, 'showPlayerSets']);

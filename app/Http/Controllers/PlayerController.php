@@ -80,16 +80,16 @@ class PlayerController extends Controller
         }
 
         $trendData = [];
-        for ($i = 0; $i < $sets->count() - 9; $i++) {
-            $chunk = $sets->slice($i, 10);
+        $trendLabels = [];
+        for ($i = 0; $i < 10; $i++) {
+            $chunk = $sets->slice($i * 10, 10);
             $chunkWins = $chunk->filter(fn($set) =>
                 ($set->set_winner == 1 && $set->p1_polaris_id === $polarisId) || 
                 ($set->set_winner == 2 && $set->p2_polaris_id === $polarisId)
             )->count();
             $trendData[] = round(($chunkWins / 10) * 100, 2);
+            $trendLabels[] = ($i + 1) * 10;
         }
-
-        $trendLabels = range(1, count($trendData));
 
         $hardestSets = [];
         foreach ($sets as $set) {
