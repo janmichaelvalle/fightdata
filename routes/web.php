@@ -11,4 +11,4 @@ use App\Http\Controllers\SimplePlayerController;
 
 Route::get('/player/{polarisId}', [PlayerController::class, 'show']);
 
-Route::get('/sets/{polarisId}', [SimplePlayerController::class, 'showPlayerSets']);
+Route::get('/sets/{polarisId}', [SimplePlayerController::class, 'getPlayerSets']);
