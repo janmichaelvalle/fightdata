@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Set;
-
+use App\Models\GameMatch;
+use Mockery\CountValidator\AtMost;
 
 class SimplePlayerController extends Controller
 {
@@ -31,8 +32,9 @@ class SimplePlayerController extends Controller
    //  dd($sets->toArray());
 
    $winRate = $this->calculateWinRate($sets, $polarisId);
+   $mostFrequentOpponent = $this->calculateMostFrequentOpponent($sets, $polarisId);
 
-   return view('set.show', compact('sets', 'winRate'));
+   return view('set.show', compact('sets', 'winRate', 'mostFrequentOpponent'));
     # compact('sets') - function that takes the string 'sets' and creates an array:
    }
 
@@ -59,10 +61,61 @@ class SimplePlayerController extends Controller
          }
       }
       
-      $win_rate = $wins/100;
+      $winRate = $wins/100;
 
-      dd($wins, $win_rate);
+      return $winRate
+
+      // dd($wins, $winRate);
 
    }
 
+   /** Calculate the most frequent opponents faced by the player over the last 100 sets.
+    * Logic:
+    * 1. Extract match1_ids from each set to identify representative matches.
+    * 2. Query game_matches table to get details about these matches.
+    * 3. Determine opponent character IDs relative to the player's Polaris ID.
+    * 4. Count how many times each opponent character appears.
+    * 5. Identify the opponent(s) with the highest frequency (ties included).
+    * @param \Illuminate\Support\Collection $sets  Collection of the player's sets retrieved from getPlayerSets().
+    * @param string $polarisId  The player's Polaris ID.
+    * @return \Illuminate\Support\Collection  Collection of the most frequent opponent character IDs with their frequencies.
+    */
+
+   private function calculateMostFrequentOpponent($sets, $polarisId) {
+      $matchIds = $sets->pluck('match1_id')->filter(); #gets match1 IDs from all sets
+
+      $matches = GameMatch::whereIn('battle_id', $matchIds)->get();
+
+      $opponents = [];
+      foreach ($matches as $match) {
+    
+         if ($match['p1_polaris_id'] === $polarisId) {
+            $opponents[] = $match['p2_chara_id'];
+         } else {
+            $opponents[] = $match['p1_chara_id'];
+         }
+      }
+      $opponentsCollection = collect($opponents);
+
+      $opponentCounts = $opponentsCollection->countBy()->sortDesc();
+      $maxOpponentCount = $opponentCounts->max();
+      $mostFrequentOpponent = $opponentCounts->filter(function ($count, $chara_id) use ($maxOpponentCount) {
+         if ($count === $maxOpponentCount) {
+            return $chara_id;
+         };
+      });
+
+      return $mostFrequentOpponent;
+      
+      /*
+      dd(
+         ['matchIds' => $matchIds->toArray()],
+         ['matches' => $matches->toArray()],
+         ['opponentsCollection' => $opponentsCollection->toArray()],
+         ['opponentCounts' => $opponentCounts->toArray()],
+         ['maxOpponentCount' => $maxOpponentCount],
+         ['mostFrequentOpponent' => $mostFrequentOpponent->toArray()],
+      );
+      */
+}
 }
