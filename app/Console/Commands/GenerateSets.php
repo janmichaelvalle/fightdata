@@ -79,8 +79,8 @@ class GenerateSets extends Command
         Set::create([
             'p1_polaris_id' => $p1Id,
             'p2_polaris_id' => $p2Id,
-            'p1_char_id' => $p1Char,
-            'p2_char_id' => $p2Char,
+            'p1_chara_id' => $p1Char,
+            'p2_chara_id' => $p2Char,
             'match1_id' => isset($matchIds[0]) ? $matchIds[0] : null,
             'match2_id' => isset($matchIds[1]) ? $matchIds[1] : null,
             'match3_id' => isset($matchIds[2]) ? $matchIds[2] : null,

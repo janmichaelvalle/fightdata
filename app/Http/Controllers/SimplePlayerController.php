@@ -33,6 +33,7 @@ class SimplePlayerController extends Controller
 
    $winRate = $this->calculateWinRate($sets, $polarisId);
    $mostFrequentOpponent = $this->calculateMostFrequentOpponent($sets, $polarisId);
+   $matchupMetrics = $this->analyzeMatchupPerformance($sets, $polarisId);
 
    return view('set.show', compact('sets', 'winRate', 'mostFrequentOpponent'));
     # compact('sets') - function that takes the string 'sets' and creates an array:
@@ -63,7 +64,7 @@ class SimplePlayerController extends Controller
       
       $winRate = $wins/100;
 
-      return $winRate
+      return $winRate;
 
       // dd($wins, $winRate);
 
@@ -117,5 +118,39 @@ class SimplePlayerController extends Controller
          ['mostFrequentOpponent' => $mostFrequentOpponent->toArray()],
       );
       */
-}
+   }
+   private function analyzeMatchupPerformance($sets, $polarisId){
+      $matchupMetrics = [];
+
+      foreach ($sets as $set) {
+         if($set['p1_polaris_id'] === $polarisId) {
+            $opponentCharaId = $set['p2_chara_id'];
+            $didWin = ($set['set_winner'] === 1);
+         } elseif ($set['p2_polaris_id'] === $polarisId) {
+            $opponentCharaId = $set['p1_chara_id'];
+            $didWin = ($set['set_winner'] === 2);
+            } else {
+               continue;
+            }
+         if (!isset($matchupMetrics[$opponentCharaId])) {
+               $matchupMetrics[$opponentCharaId] = [
+                   'wins' => 0,
+                  'losses' => 0,
+               ];
+            }
+         if ($didWin) {
+            $matchupMetrics[$opponentCharaId]['wins'] += 1;
+         } else {
+            $matchupMetrics[$opponentCharaId]['losses'] += 1;
+         }
+
+         }
+      dd($matchupMetrics);
+      return $matchupMetrics;  
+   }
+
+   private function findHardestMatchup($matchupMetrics) {
+
+   }
+   
 }

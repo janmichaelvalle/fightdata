@@ -12,8 +12,8 @@ class Set extends Model
     protected $fillable = [
         'p1_polaris_id',
         'p2_polaris_id',
-        'p1_char_id',
-        'p2_char_id',
+        'p1_chara_id',
+        'p2_chara_id',
         'match1_id',
         'match2_id',
         'match3_id',

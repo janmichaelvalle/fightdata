@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('p1_polaris_id');
             $table->string('p2_polaris_id');
-            $table->integer('p1_char_id');
-            $table->integer('p2_char_id');
+            $table->integer('p1_chara_id');
+            $table->integer('p2_chara_id');
             $table->string('match1_id', 64)->nullable();
             $table->string('match2_id', 64)->nullable();
             $table->string('match3_id', 64)->nullable();
