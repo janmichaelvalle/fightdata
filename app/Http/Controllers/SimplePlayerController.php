@@ -33,11 +33,12 @@ class SimplePlayerController extends Controller
 
    $winRate = $this->calculateWinRate($sets, $polarisId);
    $matchupMetrics = $this->analyzeMatchupPerformance($sets, $polarisId);
+   // dd($matchupMetrics);
    $findFindMostDefeatsBy = $this->findMostDefeatsBy($matchupMetrics);
    $findMostFrequentOpponent = $this->findMostFrequentOpponent($matchupMetrics);
-   $findHardestMatchup = $this->findHardestMatchup($sets, $polarisId);
+   $findHardestMatchup = $this->findHardestMatchup($matchupMetrics);
 
-   return view('set.show', compact('sets', 'winRate', 'mostFrequentOpponent'));
+   return view('set.show', compact('sets', 'winRate', 'findMostFrequentOpponent', 'matchupMetrics'));
     # compact('sets') - function that takes the string 'sets' and creates an array:
    }
 
@@ -72,7 +73,7 @@ class SimplePlayerController extends Controller
 
    }
 
-   /** Calculate the most frequent opponents faced by the player over the last 100 sets.
+   /** [DEPRECATED] Calculate the most frequent opponents faced by the player over the last 100 sets.
     * Logic:
     * 1. Extract match1_ids from each set to identify representative matches.
     * 2. Query game_matches table to get details about these matches.
@@ -84,7 +85,8 @@ class SimplePlayerController extends Controller
     * @return \Illuminate\Support\Collection  Collection of the most frequent opponent character IDs with their frequencies.
     */
 
-   private function calculateMostFrequentOpponentOld($sets, $polarisId) {
+   
+    private function calculateMostFrequentOpponentOld($sets, $polarisId) {
       $matchIds = $sets->pluck('match1_id')->filter(); #gets match1 IDs from all sets
 
       $matches = GameMatch::whereIn('battle_id', $matchIds)->get();
@@ -121,6 +123,22 @@ class SimplePlayerController extends Controller
       );
       */
    }
+
+   /** Analyze matchup performance metrics against all opponents over the last 100 sets.
+    *
+    * Logic:
+    * - Loop through each set to determine the opponent's character and the outcome (win/loss).
+    * - Track total matches, wins, losses, and swept losses (losses where match3_id is null).
+    * - The result is an associative array indexed by opponent character ID.
+    *
+    * @param \Illuminate\Support\Collection $sets  Collection of the player's sets retrieved from getPlayerSets().
+    * @param string $polarisId  The player's Polaris ID.
+    * @return array  An associative array with opponent character IDs as keys and values containing:
+    *                - 'wins' => number of wins against this opponent
+    *                - 'losses' => number of losses against this opponent
+    *                - 'swept_losses' => number of 2-0 losses against this opponent
+    *                - 'total_matches' => total number of sets played against this opponent
+    */
    private function analyzeMatchupPerformance($sets, $polarisId){
       $matchupMetrics = [];
 
@@ -136,17 +154,21 @@ class SimplePlayerController extends Controller
             }
          if (!isset($matchupMetrics[$opponentCharaId])) {
                $matchupMetrics[$opponentCharaId] = [
-                   'wins' => 0,
+                  'wins' => 0,
                   'losses' => 0,
-                  'total' => 0
+                  'total_matches' => 0,
+                  'swept_losses' => 0
                ];
             }
          if ($didWin) {
             $matchupMetrics[$opponentCharaId]['wins'] += 1;
          } else {
             $matchupMetrics[$opponentCharaId]['losses'] += 1;
+            if ($set['match3_id'] === null) {
+               $matchupMetrics[$opponentCharaId]['swept_losses'] += 1;
+            }
          }
-         $matchupMetrics[$opponentCharaId]['total'] +=1;
+         $matchupMetrics[$opponentCharaId]['total_matches'] +=1;
          }
       // dd($matchupMetrics);
       return $matchupMetrics;  
@@ -180,6 +202,7 @@ class SimplePlayerController extends Controller
       // dd($findMostDefeatsBy, $maxLosses);
       return [$findMostDefeatsBy, $maxLosses];
       }
+
    /** Identify the most frequently encountered opponent character(s) based on total sets.
     *
     * Logic:
@@ -197,11 +220,11 @@ class SimplePlayerController extends Controller
       $mostFrequentOpponent = [];
       $maxEncounters = null;
       foreach ($matchupMetrics as $charaId => $metrics) {
-         if ((empty($mostFrequentOpponent)) || ($maxEncounters < $metrics['total'])) {
+         if ((empty($mostFrequentOpponent)) || ($maxEncounters < $metrics['total_matches'])) {
             $mostFrequentOpponent  = [];
             $mostFrequentOpponent[] = $charaId;
-            $maxEncounters = $metrics['total'];
-         } elseif ($maxEncounters === $metrics['total']) {
+            $maxEncounters = $metrics['total_matches'];
+         } elseif ($maxEncounters === $metrics['total_matches']) {
             $mostFrequentOpponent[] = $charaId;
          }
       }
@@ -210,19 +233,21 @@ class SimplePlayerController extends Controller
       }
 
 
-   private function findHardestMatchup($sets, $polarisId) {
-   $setsLost = $sets->filter(function ($set) use ($polarisId) {
-    if (
-        ($set['p1_polaris_id'] === $polarisId && $set['set_winner'] === 2) 
-        ||
-        ($set['p2_polaris_id'] === $polarisId && $set['set_winner'] === 1)
-    ) {
-        return true;
-    }
-    return false;
-   });
+   private function findHardestMatchup($matchupMetrics) {
+   $hardestMatchup = [];
+   $maxSweptLosses = null;
+   foreach ($matchupMetrics as $charaId => $metrics) {
+      if ((empty($hardestMatchup)) || ($maxSweptLosses < $metrics['swept_losses'])) {
+         $hardestMatchup  = [];
+         $hardestMatchup[] = $charaId;
+         $maxSweptLosses = $metrics['swept_losses'];
+      } elseif ($maxSweptLosses === $metrics['swept_losses']) {
+         $hardestMatchup[] = $charaId;
+      }
+   }
 
-   dd($setsLost->toArray());
+   dd($hardestMatchup, $maxSweptLosses);
+   return [$hardestMatchup, $maxSweptLosses];
    
   
    }

@@ -16,7 +16,7 @@ class CharacterSeeder extends Seeder
             25 => 'Unknown', 26 => 'Unknown', 27 => 'Unknown', 28 => 'Zafina', 29 => 'Leroy',
             30 => 'Unknown', 31 => 'Unknown', 32 => 'Jun', 33 => 'Reina', 34 => 'Azucena',
             35 => 'Victor', 36 => 'Raven', 37 => 'Unknown', 38 => 'Eddy', 39 => 'Lidia',
-            40 => 'Heihachi', 41 => 'Clive', 42 => 'Anna',
+            40 => 'Heihachi', 41 => 'Clive', 42 => 'Anna', 43 => 'Fahkumram',
         ];
 
         foreach ($characters as $id => $name) {
