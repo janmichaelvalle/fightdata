@@ -37,8 +37,9 @@ class SimplePlayerController extends Controller
    $findFindMostDefeatsBy = $this->findMostDefeatsBy($matchupMetrics);
    $findMostFrequentOpponent = $this->findMostFrequentOpponent($matchupMetrics);
    $findHardestMatchup = $this->findHardestMatchup($matchupMetrics);
+   $getWorstSetLosses = $this->getWorstSetLosses($sets, $polarisId);
 
-   return view('set.show', compact('sets', 'winRate', 'findMostFrequentOpponent', 'matchupMetrics'));
+   return view('set.show', compact('sets', 'winRate', 'findMostFrequentOpponent', 'matchupMetrics', 'getWorstSetLosses'));
     # compact('sets') - function that takes the string 'sets' and creates an array:
    }
 
@@ -73,56 +74,7 @@ class SimplePlayerController extends Controller
 
    }
 
-   /** [DEPRECATED] Calculate the most frequent opponents faced by the player over the last 100 sets.
-    * Logic:
-    * 1. Extract match1_ids from each set to identify representative matches.
-    * 2. Query game_matches table to get details about these matches.
-    * 3. Determine opponent character IDs relative to the player's Polaris ID.
-    * 4. Count how many times each opponent character appears.
-    * 5. Identify the opponent(s) with the highest frequency (ties included).
-    * @param \Illuminate\Support\Collection $sets  Collection of the player's sets retrieved from getPlayerSets().
-    * @param string $polarisId  The player's Polaris ID.
-    * @return \Illuminate\Support\Collection  Collection of the most frequent opponent character IDs with their frequencies.
-    */
-
-   
-    private function calculateMostFrequentOpponentOld($sets, $polarisId) {
-      $matchIds = $sets->pluck('match1_id')->filter(); #gets match1 IDs from all sets
-
-      $matches = GameMatch::whereIn('battle_id', $matchIds)->get();
-
-      $opponents = [];
-      foreach ($matches as $match) {
-    
-         if ($match['p1_polaris_id'] === $polarisId) {
-            $opponents[] = $match['p2_chara_id'];
-         } else {
-            $opponents[] = $match['p1_chara_id'];
-         }
-      }
-      $opponentsCollection = collect($opponents);
-
-      $opponentCounts = $opponentsCollection->countBy()->sortDesc();
-      $maxOpponentCount = $opponentCounts->max();
-      $mostFrequentOpponent = $opponentCounts->filter(function ($count, $chara_id) use ($maxOpponentCount) {
-         if ($count === $maxOpponentCount) {
-            return $chara_id;
-         };
-      });
-
-      return $mostFrequentOpponent;
-      
-      /*
-      dd(
-         ['matchIds' => $matchIds->toArray()],
-         ['matches' => $matches->toArray()],
-         ['opponentsCollection' => $opponentsCollection->toArray()],
-         ['opponentCounts' => $opponentCounts->toArray()],
-         ['maxOpponentCount' => $maxOpponentCount],
-         ['mostFrequentOpponent' => $mostFrequentOpponent->toArray()],
-      );
-      */
-   }
+  
 
    /** Analyze matchup performance metrics against all opponents over the last 100 sets.
     *
@@ -233,25 +185,41 @@ class SimplePlayerController extends Controller
       }
 
 
-   private function findHardestMatchup($matchupMetrics) {
-   $hardestMatchup = [];
-   $maxSweptLosses = null;
-   foreach ($matchupMetrics as $charaId => $metrics) {
-      if ((empty($hardestMatchup)) || ($maxSweptLosses < $metrics['swept_losses'])) {
-         $hardestMatchup  = [];
-         $hardestMatchup[] = $charaId;
-         $maxSweptLosses = $metrics['swept_losses'];
-      } elseif ($maxSweptLosses === $metrics['swept_losses']) {
-         $hardestMatchup[] = $charaId;
-      }
-   }
-
-   dd($hardestMatchup, $maxSweptLosses);
-   return [$hardestMatchup, $maxSweptLosses];
    
+   
+   private function findHardestMatchup($matchupMetrics) {
+      $hardestMatchup = [];
+      $maxSweptLosses = null;
+      foreach ($matchupMetrics as $charaId => $metrics) {
+         if ((empty($hardestMatchup)) || ($maxSweptLosses < $metrics['swept_losses'])) {
+            $hardestMatchup  = [];
+            $hardestMatchup[] = $charaId;
+            $maxSweptLosses = $metrics['swept_losses'];
+         } elseif ($maxSweptLosses === $metrics['swept_losses']) {
+            $hardestMatchup[] = $charaId;
+         }
+      }
+
+      // dd($hardestMatchup, $maxSweptLosses);
+      return [$hardestMatchup, $maxSweptLosses];
   
    }
-}
+
+   private function getWorstSetLosses($sets, $polarisId) {
+      $worstSetLosses = [];
+
+      foreach ($sets as $set) {
+         if ($set['p1_polaris_id'] === $polarisId && ($set['set_winner'] === 2) && ($set['match3_id'] === null)) {
+            $worstSetLosses[]  = $set; 
+         }
+      }
+      // dd(collect($worstSetLosses)->toArray());
+      return $worstSetLosses;
+   }
+
+   
+}  
+   
       
    
    
