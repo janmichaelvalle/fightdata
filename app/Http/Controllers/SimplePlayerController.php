@@ -29,18 +29,51 @@ class SimplePlayerController extends Controller
     ->orderBy('set_start', 'DESC')
     ->take(100)
     ->get();
-   //  dd($sets->toArray());
 
    $winRate = $this->calculateWinRate($sets, $polarisId);
    $matchupMetrics = $this->analyzeMatchupPerformance($sets, $polarisId);
-   // dd($matchupMetrics);
-   $findFindMostDefeatsBy = $this->findMostDefeatsBy($matchupMetrics);
-   $findMostFrequentOpponent = $this->findMostFrequentOpponent($matchupMetrics);
-   $findHardestMatchup = $this->findHardestMatchup($matchupMetrics);
+
+   // Unpack the 2-element array returned by each function.
+   // Each function returns: [$arrayOfCharacterIds, $count]
+   // Example: [$findMostDefeatsByIds, $maxLosses]
+   list($findMostDefeatsByIds, $maxLosses) = $this->findMostDefeatsBy($matchupMetrics);
+   list($mostFrequentOpponentIds, $maxEncounters) = $this->findMostFrequentOpponent($matchupMetrics);
+   list($hardestMatchupIds, $maxSweptLosses) = $this->findHardestMatchup($matchupMetrics);
+
+
    $getWorstSetLosses = $this->getWorstSetLosses($sets, $polarisId);
 
-   return view('set.show', compact('sets', 'winRate', 'findMostFrequentOpponent', 'matchupMetrics', 'getWorstSetLosses'));
-    # compact('sets') - function that takes the string 'sets' and creates an array:
+   // Load all character names once
+   $characterMap = \App\Models\Character::pluck('name', 'chara_id');
+
+   // Helper function to convert an array of character IDs to character names.
+   // Uses $characterMap to look up each ID.
+   // If an ID is not found in the map, defaults to 'Unknown'.
+   // Example: [5, 7, 99] => ['Kazuya', 'Lili', 'Unknown']
+   $mapCharacterNames = fn($ids) => collect($ids)->map(fn($id) => $characterMap[$id] ?? 'Unknown');
+
+    // Use it for all metrics
+   $mostDefeats = $mapCharacterNames($findMostDefeatsByIds);
+   $mostFrequentOpponent = $mapCharacterNames($mostFrequentOpponentIds);
+   $hardestMatchups = $mapCharacterNames($hardestMatchupIds);
+   $getWorstSetLosses = collect($getWorstSetLosses)->map(function($loss) use ($characterMap) {
+    $loss['opponent_character'] = $characterMap[$loss['opponent_character']] ?? 'Unknown';
+    $loss['player_character'] = $characterMap[$loss['player_character']] ?? 'Unknown';
+    return $loss;
+   });   
+
+   return view('set.show', compact(
+    'sets', 
+    'winRate', 
+    'mostDefeats', 
+    'matchupMetrics', 
+    'hardestMatchups',
+    'maxSweptLosses',
+    'maxLosses', 
+    'getWorstSetLosses', 
+    'mostFrequentOpponent', 
+    'maxEncounters'
+   ));
    }
 
    /** Calculate the player's win rate over the last 100 complete sets.
@@ -217,6 +250,7 @@ class SimplePlayerController extends Controller
            if (($match1['p1_rounds'] <= 1) && ($match2['p1_rounds'] <= 1)) {
              $worstSetLosses[] = [
                'set_id' => $set->id,
+               'set_start' => $set->set_start,
                'player_character' => $set['p1_chara_id'],
                'opponent_character' => $set['p2_chara_id'],
                'opponent_name' => $match1->p2_name,
@@ -244,12 +278,10 @@ class SimplePlayerController extends Controller
             ];   
 
            }
-         
-            
          }  
          
       }
-      dd(collect($worstSetLosses)->toArray());
+      // dd(collect($worstSetLosses)->toArray());
 
       return $worstSetLosses;
 
