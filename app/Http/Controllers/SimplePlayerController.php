@@ -210,11 +210,24 @@ class SimplePlayerController extends Controller
 
       foreach ($sets as $set) {
          if ($set['p1_polaris_id'] === $polarisId && ($set['set_winner'] === 2) && ($set['match3_id'] === null)) {
-            $worstSetLosses[]  = $set; 
+              /*
+               Search for match1 and match2 in game matches table
+               Add rounds_won for opponent
+            */
+            $match_results = 
+            GameMatch::whereIn('battle_id', [$set['match1_id'], $set['match2_id']])
+            ->select('p1_rounds')
+            ->get();
+            
+            
+          
          }
       }
       // dd(collect($worstSetLosses)->toArray());
+      dd($match_results->toArray());
       return $worstSetLosses;
+
+  
    }
 
    
