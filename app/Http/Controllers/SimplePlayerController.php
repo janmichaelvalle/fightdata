@@ -210,21 +210,47 @@ class SimplePlayerController extends Controller
 
       foreach ($sets as $set) {
          if ($set['p1_polaris_id'] === $polarisId && ($set['set_winner'] === 2) && ($set['match3_id'] === null)) {
-              /*
-               Search for match1 and match2 in game matches table
-               Add rounds_won for opponent
-            */
-            $match_results = 
-            GameMatch::whereIn('battle_id', [$set['match1_id'], $set['match2_id']])
-            ->select('p1_rounds')
-            ->get();
-            
-            
+          
+           $match1 = GameMatch::select('p1_rounds', 'p2_name')->where('battle_id', $set['match1_id'])->first();
+           $match2 = GameMatch::select('p1_rounds', 'p2_name')->where('battle_id', $set['match2_id'])->first();
+
+           if (($match1['p1_rounds'] <= 1) && ($match2['p1_rounds'] <= 1)) {
+             $worstSetLosses[] = [
+               'set_id' => $set->id,
+               'player_character' => $set['p1_chara_id'],
+               'opponent_character' => $set['p2_chara_id'],
+               'opponent_name' => $match1->p2_name,
+               'match1_rounds_player_won' => $match1->p1_rounds,
+               'match2_rounds_player_won' => $match2->p1_rounds,
+            ];   
+
+           }
           
          }
+         if ($set['p2_polaris_id'] === $polarisId && ($set['set_winner'] === 1) && ($set['match3_id'] === null)) {
+         
+           $match1 = GameMatch::select('p2_rounds', 'p1_name')->where('battle_id', $set['match1_id'])->first();
+           $match2 = GameMatch::select('p2_rounds', 'p1_name')->where('battle_id', $set['match2_id'])->first();
+
+           if (($match1['p2_rounds'] <= 1) && ($match2['p2_rounds'] <= 1)) {
+             $worstSetLosses[] = [
+               'set_id' => $set->id,
+               'set_start' => $set->set_start,
+               'player_character' => $set['p2_chara_id'],
+               'opponent_character' => $set['p1_chara_id'],
+               'opponent_name' => $match1->p1_name,
+               'match1_rounds_player_won' => $match1->p2_rounds,
+               'match2_rounds_player_won' => $match2->p2_rounds,
+            ];   
+
+           }
+         
+            
+         }  
+         
       }
-      // dd(collect($worstSetLosses)->toArray());
-      dd($match_results->toArray());
+      dd(collect($worstSetLosses)->toArray());
+
       return $worstSetLosses;
 
   
