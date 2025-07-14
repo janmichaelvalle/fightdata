@@ -44,5 +44,30 @@
   </tbody>
 </table>
 
+<p>$matchupMetrics: This a summary of win/losses per character</p>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Opponent Character</th>
+      <th>Wins</th>
+      <th>Losses</th>
+      <th>Total Matches</th>
+      <th>Win Rate</th>
+    </tr>
+  </thead>
+  <tbody>
+    @foreach ($matchupMetrics as $charaId => $matchup)
+      <tr>
+        <td>{{ $characterMap[$charaId] ?? 'Unknown' }}</td>
+        <td>{{ $matchup['wins'] }}</td>
+        <td>{{ $matchup['losses'] }}</td>
+        <td>{{ $matchup['total_matches'] }}</td>
+        <td>{{ $matchup['win_rate'] }}</td>
+      </tr>
+    @endforeach
+  </tbody>
+</table>
+
+
 </body>
 </html>

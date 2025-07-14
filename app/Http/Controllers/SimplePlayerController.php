@@ -72,7 +72,8 @@ class SimplePlayerController extends Controller
     'maxLosses', 
     'getWorstSetLosses', 
     'mostFrequentOpponent', 
-    'maxEncounters'
+    'maxEncounters',
+    'characterMap'
    ));
    }
 
@@ -142,6 +143,7 @@ class SimplePlayerController extends Controller
                   'wins' => 0,
                   'losses' => 0,
                   'total_matches' => 0,
+                  'win_rate' => 0,
                   'swept_losses' => 0
                ];
             }
@@ -154,6 +156,7 @@ class SimplePlayerController extends Controller
             }
          }
          $matchupMetrics[$opponentCharaId]['total_matches'] +=1;
+         $matchupMetrics[$opponentCharaId]['win_rate'] = $matchupMetrics[$opponentCharaId]['wins'] / $matchupMetrics[$opponentCharaId]['total_matches'];
          }
       // dd($matchupMetrics);
       return $matchupMetrics;  
