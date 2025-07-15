@@ -304,6 +304,7 @@ class SimplePlayerController extends Controller
       $recommendedCharacter = null;
       $lowestWinRate = null;
       $mostLosses = -1;
+      $mostMatches = null;
       foreach ($matchupMetrics as $charaId => $metrics) {
          if ($metrics['total_matches'] > 3) {
             if ($recommendedCharacter === null ||
@@ -322,7 +323,7 @@ class SimplePlayerController extends Controller
       if ($recommendedCharacter !== null) {
       return "Focus on practicing against " . ($characterMap[$recommendedCharacter] ?? 'Unknown') . 
             ". This is your most impactful matchup to rank up, with a win rate of " . 
-            round($lowestWinRate * 100, 2) . "% across " . $mostLosses . " matches.";
+            round($lowestWinRate * 100, 2) . "% across " . $mostMatches . " matches.";
       } else {
       return "Keep going! No critical weaknesses found in your most frequent matchups.";
       }
