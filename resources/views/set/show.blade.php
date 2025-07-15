@@ -9,6 +9,7 @@
 
 <p><strong>Note:</strong> All data shown is based on your latest 100 complete ranked sets.</p>
 
+<p><strong>Recommendation:</strong> {{ $recommendation }}</p>
 
 <p> Win Rate: {{ number_format($winRate * 100, 2) }}%</p>
 
