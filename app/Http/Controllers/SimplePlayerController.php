@@ -297,30 +297,32 @@ class SimplePlayerController extends Controller
 
    private function generateRecommendation($matchupMetrics, $characterMap){
       /*
-      1. Most frequent opponent with at least 3 total matches
+      1. Most total losses first with at least 3 total matches
       2. Lowest win rate
    
       */
       $recommendedCharacter = null;
       $lowestWinRate = null;
-      $totalMatches = 0;
+      $mostLosses = -1;
       foreach ($matchupMetrics as $charaId => $metrics) {
          if ($metrics['total_matches'] > 3) {
-            if ($recommendedCharacter === null || 
-                $metrics['win_rate'] < $lowestWinRate ||
-                ($metrics['win_rate'] == $lowestWinRate && $metrics['total_matches'] > $totalMatches)) {
-               $recommendedCharacter  = $charaId;
-               $lowestWinRate = $metrics['win_rate'];
-               $totalMatches= $metrics['total_matches'];
+            if ($recommendedCharacter === null ||
+                  $metrics['losses'] > $mostLosses ||
+                  ($metrics['losses'] == $mostLosses && $metrics['win_rate'] < $lowestWinRate) ||
+                  ($metrics['losses'] == $mostLosses && $metrics['win_rate'] == $lowestWinRate && $metrics['total_matches'] > $mostMatches)) {
+
+                  $recommendedCharacter = $charaId;
+                  $mostLosses = $metrics['losses'];
+                  $lowestWinRate = $metrics['win_rate'];
+                  $mostMatches = $metrics['total_matches'];
             }
-            
          }
-      }
+}
 
       if ($recommendedCharacter !== null) {
       return "Focus on practicing against " . ($characterMap[$recommendedCharacter] ?? 'Unknown') . 
             ". This is your most impactful matchup to rank up, with a win rate of " . 
-            round($lowestWinRate * 100, 2) . "% across " . $totalMatches . " matches.";
+            round($lowestWinRate * 100, 2) . "% across " . $mostLosses . " matches.";
       } else {
       return "Keep going! No critical weaknesses found in your most frequent matchups.";
       }
